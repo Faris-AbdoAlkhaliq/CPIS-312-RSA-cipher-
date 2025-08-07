@@ -1,0 +1,40 @@
+<!-- user.html -->
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+    <title>User Dashboard</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h2>User Dashboard</h2>
+	<a href="public_keys.html">View Public Key Directory</a>
+	<a href="decrypt.html" class="btn">Open RSA Decryption Tool</a>
+
+    <button id="logoutBtn">Logout</button>
+
+    <h3>Your RSA Keys</h3>
+    <p><strong>Public Key (e, n):</strong> <span id="publicKey"></span></p>
+    <p><strong>Private Key (d, n):</strong> <span id="privateKey"></span></p>
+
+    <h3>Send Encrypted Message</h3>
+    <form id="sendMessageForm">
+        <label for="recipient">To:</label>
+        <select id="recipient" required></select><br>
+        <label for="message">Message (max 5 chars):</label>
+        <input type="text" id="message" maxlength="5" required><br>
+        <button type="submit">Send</button>
+    </form>
+
+    <h3>Sent Messages</h3>
+    <ul id="sentMessages"></ul>
+
+    <h3>Received Messages</h3>
+    <ul id="receivedMessages"></ul>
+
+    <script src="rsa.js"></script>
+    <script src="utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>

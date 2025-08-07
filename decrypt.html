@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSA Decryption Tool</title>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-bar">
+            <h1>RSA Decryption Tool</h1>
+            <div class="nav-links">
+                <a href="user.html" class="btn">Back to Dashboard</a>
+                <button id="logoutBtn" class="btn btn-danger">Logout</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>How to Use This Tool</h3>
+            <p>This tool allows you to decrypt RSA-encrypted messages using any private key (d, n) values.</p>
+            <ul>
+                <li>Enter the encrypted message (as a BigInt string)</li>
+                <li>Provide your private key components (d and n)</li>
+                <li>Click "Decrypt" to reveal the original message</li>
+                <li>You can use this tool to decrypt messages encrypted with any RSA key pair</li>
+            </ul>
+        </div>
+        
+        <div class="card">
+            <h2>Decryption Form</h2>
+            
+            <div class="form-group">
+                <label for="encryptedText">Encrypted Text (BigInt):</label>
+                <textarea id="encryptedText" placeholder="Enter the encrypted BigInt value..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="privateD">Private Key (d):</label>
+                <input type="text" id="privateD" placeholder="Enter your private key d value...">
+            </div>
+            
+            <div class="form-group">
+                <label for="privateN">Private Key (n):</label>
+                <input type="text" id="privateN" placeholder="Enter your private key n value...">
+            </div>
+            
+            <div class="btn-group">
+                <button id="decryptBtn" class="btn">Decrypt Message</button>
+                <button id="clearBtn" class="btn btn-danger">Clear Form</button>
+            </div>
+        </div>
+        
+        <div class="result-card">
+            <div class="result-header">Decrypted Message</div>
+            <div class="result-content" id="decryptedMessage">Your decrypted message will appear here...</div>
+        </div>
+        
+        <div class="card">
+            <h2>Your Current RSA Keys</h2>
+            <div class="key-display">
+                <p><strong>Public Key (e, n):</strong> <span id="currentPublicKey">Loading...</span></p>
+                <p><strong>Private Key (d, n):</strong> <span id="currentPrivateKey">Loading...</span></p>
+            </div>
+            <p>Note: You can also use keys from other key pairs for decryption.</p>
+        </div>
+    </div>
+
+    <script>
+        // Include RSA functions
+        // Miller-Rabin probabilistic primality test
+        function isProbablePrime(n, k = 5) {
+            if (n < 2n) return false;
+            if (n === 2n || n === 3n) return true;
+            if (n % 2n === 0n) return false;
+
+            let s = 0n;
+            let d = n - 1n;
+            while (d % 2n === 0n) {
+                d /= 2n;
+                s++;
+            }
+
+            for (let i = 0; i < k; i++) {
+                const a = 2n + BigInt(Math.floor(Math.random() * (Number(n - 4n))));
+                let x = modPow(a, d, n);
+                if (x === 1n || x === n - 1n) continue;
+
+                let continueOuter = false;
+                for (let r = 1n; r < s; r++) {
+                    x = modPow(x, 2n, n);
+                    if (x === n - 1n) {
+                        continueOuter = true;
+                        break;
+                    }
+                }
+
+                if (continueOuter) continue;
+                return false;
+            }
+
+            return true;
+        }
+
+        // Generate random BigInt in range [min, max]
+        function randomBigInt(min, max) {
+            const range = max - min + 1n;
+            const bits = range.toString(2).length;
+            let rnd;
+            do {
+                rnd = 0n;
+                const bytes = Math.ceil(bits / 8);
+                for (let i = 0; i < bytes; i++) {
+                    rnd = (rnd << 8n) + BigInt(Math.floor(Math.random() * 256));
+                }
+            } while (rnd > range);
+            return min + rnd;
+        }
+
+        // Greatest Common Divisor
+        function gcd(a, b) {
+            while (b !== 0n) {
+                [a, b] = [b, a % b];
+            }
+            return a;
+        }
+
+        // Modular Inverse using Extended Euclidean Algorithm
+        function modInverse(e, phi) {
+            let [a, b] = [phi, e];
+            let [x0, x1] = [0n, 1n];
+            while (b !== 0n) {
+                const q = a / b;
+                [a, b] = [b, a % b];
+                [x0, x1] = [x1, x0 - q * x1];
+            }
+            return (x0 + phi) % phi;
+        }
+
+        // Modular Exponentiation (fast and safe)
+        function modPow(base, exponent, modulus) {
+            if (modulus === 1n) return 0n;
+            let result = 1n;
+            base = base % modulus;
+            while (exponent > 0n) {
+                if (exponent % 2n === 1n) {
+                    result = (result * base) % modulus;
+                }
+                exponent = exponent / 2n;
+                base = (base * base) % modulus;
+            }
+            return result;
+        }
+
+        // RSA Decryption: plaintext = (cipher^d) mod n
+        function rsaDecrypt(cipherInt, privateKey) {
+            const d = BigInt(privateKey.d);
+            const n = BigInt(privateKey.n);
+            return modPow(cipherInt, d, n);
+        }
+
+        // Convert message (max 5 chars) to a BigInt string by ASCII codes
+        function packMessage(msg) {
+            if (msg.length > 5) throw new Error("Message too long");
+            return BigInt([...msg].map(c => c.charCodeAt(0).toString().padStart(3, '0')).join(''));
+        }
+
+        // Convert a BigInt string back to ASCII message
+        function unpackMessage(packed) {
+            const str = packed.toString().padStart(15, '0');
+            let msg = '';
+            for (let i = 0; i < str.length; i += 3) {
+                const code = parseInt(str.slice(i, i + 3), 10);
+                if (code !== 0) msg += String.fromCharCode(code);
+            }
+            return msg;
+        }
+
+        // DOM elements
+        const decryptBtn = document.getElementById('decryptBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const encryptedText = document.getElementById('encryptedText');
+        const privateD = document.getElementById('privateD');
+        const privateN = document.getElementById('privateN');
+        const decryptedMessage = document.getElementById('decryptedMessage');
+        const currentPublicKey = document.getElementById('currentPublicKey');
+        const currentPrivateKey = document.getElementById('currentPrivateKey');
+
+        // Check if user is logged in
+        function checkLogin() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (!currentUser || currentUser === 'admin') {
+                alert('You must be logged in to access this page');
+                window.location.href = 'index.html';
+            }
+            return currentUser;
+        }
+
+        // Load user's keys
+        function loadUserKeys() {
+            const currentUser = checkLogin();
+            if (!currentUser) return;
+            
+            const users = JSON.parse(localStorage.getItem('users') || '{}');
+            const user = users[currentUser];
+            
+            if (user) {
+                currentPublicKey.textContent = `e=${user.publicKey.e}, n=${user.publicKey.n}`;
+                currentPrivateKey.textContent = `d=${user.privateKey.d}, n=${user.privateKey.n}`;
+                
+                // Pre-fill private key fields with user's current keys
+                privateD.value = user.privateKey.d;
+                privateN.value = user.privateKey.n;
+            }
+        }
+
+        // Decrypt button handler
+        decryptBtn.addEventListener('click', () => {
+            const dValue = privateD.value.trim();
+            const nValue = privateN.value.trim();
+            const cipherText = encryptedText.value.trim();
+            
+            if (!cipherText || !dValue || !nValue) {
+                alert('Please fill all fields');
+                return;
+            }
+            
+            try {
+                const cipherInt = BigInt(cipherText);
+                const privateKey = { d: dValue, n: nValue };
+                const decryptedBigInt = rsaDecrypt(cipherInt, privateKey);
+                const message = unpackMessage(decryptedBigInt);
+                
+                decryptedMessage.textContent = message;
+            } catch (e) {
+                decryptedMessage.textContent = `Error decrypting message: ${e.message}`;
+            }
+        });
+
+        // Clear form button
+        clearBtn.addEventListener('click', () => {
+            encryptedText.value = '';
+            decryptedMessage.textContent = 'Your decrypted message will appear here...';
+        });
+
+        // Logout button
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        });
+
+        // Initialize
+        window.addEventListener('load', () => {
+            checkLogin();
+            loadUserKeys();
+        });
+    </script>
+</body>
+</html>

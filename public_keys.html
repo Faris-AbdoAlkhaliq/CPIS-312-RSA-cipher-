@@ -1,0 +1,66 @@
+<!-- public_keys.html -->
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+    <title>Public Key Directory</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h2>Public Key Directory</h2>
+
+    <button id="logoutBtn">Logout</button>
+    <button id="backBtn">Back</button>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>e</th>
+                <th>n</th>
+            </tr>
+        </thead>
+        <tbody id="keyTableBody"></tbody>
+    </table>
+
+    <script src="utils.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const currentUser = getCurrentUser();
+            if (!currentUser) {
+                alert('You must be logged in to view this page.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const users = getUsers();
+            const tbody = document.getElementById('keyTableBody');
+            for (const username in users) {
+                const row = document.createElement('tr');
+                const e = users[username].publicKey.e;
+                const n = users[username].publicKey.n;
+                row.innerHTML = `
+                    <td>${username}</td>
+                    <td>${e}</td>
+                    <td>${n}</td>
+                `;
+                tbody.appendChild(row);
+            }
+
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                clearCurrentUser();
+                window.location.href = 'index.html';
+            });
+
+            document.getElementById('backBtn').addEventListener('click', () => {
+                if (currentUser === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'user.html';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

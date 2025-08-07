@@ -1,0 +1,30 @@
+<!-- admin.html -->
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+    <title>Admin Dashboard</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h2>Admin Dashboard</h2>
+	<a href="public_keys.html">View Public Key Directory</a>
+
+    <h3>Create New User</h3>
+    <form id="createUserForm">
+        <input type="text" id="newUsername" placeholder="Username" required><br>
+        <input type="password" id="newPassword" placeholder="Password" required><br>
+        <button type="submit">Create User</button>
+    </form>
+	<button id="logoutBtn">Logout</button>
+
+    <h3>Users List</h3>
+    <ul id="userList"></ul>
+
+    <script src="rsa.js"></script>
+    <script src="utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+	
+</body>
+</html>
